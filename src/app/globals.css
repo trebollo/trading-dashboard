@@ -93,19 +93,19 @@
   @apply bg-muted-foreground/50;
 }
 
-/* Profit/Loss colors */
-.profit {
-  @apply text-profit;
+/* Profit/Loss colors - using direct CSS values */
+.text-profit {
+  color: hsl(142, 76%, 36%);
 }
 
-.loss {
-  @apply text-loss;
+.text-loss {
+  color: hsl(0, 84%, 60%);
 }
 
 .bg-profit {
-  @apply bg-profit;
+  background-color: hsl(142, 76%, 36%);
 }
 
 .bg-loss {
-  @apply bg-loss;
+  background-color: hsl(0, 84%, 60%);
 }
