@@ -31,7 +31,7 @@ export function MonthlyHeatmap({ trades, className = '' }: MonthlyHeatmapProps) 
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
   // Get unique years
-  const years = [...new Set(months.map(m => m.split('-')[0]))].sort()
+  const years = Array.from(new Set(months.map(m => m.split('-')[0]))).sort()
 
   return (
     <div className={`space-y-2 ${className}`}>
