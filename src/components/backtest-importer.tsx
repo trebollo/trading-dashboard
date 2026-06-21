@@ -9,7 +9,11 @@ import { BacktestResult } from '@/types'
 import { importTradingViewCSV, validateCSV } from '@/lib/tv-importer'
 import { BacktestStorage } from '@/lib/storage'
 
-export default function BacktestImporter() {
+interface BacktestImporterProps {
+  onBacktestImported?: (backtest: BacktestResult) => void
+}
+
+export default function BacktestImporter({ onBacktestImported }: BacktestImporterProps) {
   const [strategyName, setStrategyName] = useState('')
   const [initialCapital, setInitialCapital] = useState(10000)
   const [file, setFile] = useState<File | null>(null)
@@ -73,6 +77,9 @@ export default function BacktestImporter() {
 
       // Save to storage
       BacktestStorage.save(backtest)
+      
+      // Call the callback if provided
+      onBacktestImported?.(backtest)
       
       setSuccess(`Successfully imported ${backtest.trades.length} trades for "${strategyName}"`)
       setFile(null)
