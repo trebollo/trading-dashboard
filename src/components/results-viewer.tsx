@@ -428,7 +428,7 @@ function TradesList({ trades }: { trades: Trade[] }) {
                   <td className={`px-3 py-2.5 text-xs ${
                     trade.pnlPercent >= 0 ? 'text-green-500' : 'text-red-500'
                   }`}>
-                    {trade.pnlPercent >= 0 ? '+' : ''}{(trade.pnlPercent * 100).toFixed(2)}%
+                    {trade.pnlPercent >= 0 ? '+' : ''}{trade.pnlPercent.toFixed(2)}%
                   </td>
                   <td className="px-3 py-2.5 text-xs text-muted-foreground">
                     {formatDuration(trade.entryTime, trade.exitTime)}
