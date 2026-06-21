@@ -5,27 +5,27 @@
 @layer base {
   :root {
     /* Dark theme by default for trading */
-    --background: 222 47% 11%;
+    --background: 222 47% 9%;
     --foreground: 210 40% 98%;
-    --card: 223 47% 13%;
+    --card: 223 47% 11%;
     --card-foreground: 210 40% 98%;
-    --popover: 223 47% 13%;
+    --popover: 223 47% 11%;
     --popover-foreground: 210 40% 98%;
     --primary: 217 91% 60%;
     --primary-foreground: 222 47% 11%;
-    --secondary: 217 33% 17%;
+    --secondary: 217 33% 15%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
+    --muted: 217 33% 15%;
     --muted-foreground: 215 20% 65%;
     --accent: 217 33% 17%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 25%;
-    --input: 217 33% 25%;
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
     --ring: 217 91% 60%;
     --radius: 0.75rem;
-    
+
     /* Custom profit/loss colors */
     --profit: 142 76% 36%;
     --profit-foreground: 142 76% 98%;
@@ -38,7 +38,7 @@
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
@@ -52,8 +52,8 @@ html {
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -61,17 +61,17 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 3px;
+  background: hsl(var(--muted-foreground) / 0.2);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: hsl(var(--muted-foreground) / 0.4);
 }
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -82,12 +82,17 @@ html {
 
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4); }
-  50% { box-shadow: 0 0 20px 5px hsl(var(--primary) / 0.2); }
+  50% { box-shadow: 0 0 20px 5px hsl(var(--primary) / 0.15); }
 }
 
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 
 .animate-fade-in {
@@ -102,11 +107,15 @@ html {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-/* Glass effect */
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Glass effect - enhanced */
 .glass {
-  background: hsl(var(--card) / 0.8);
-  backdrop-filter: blur(12px);
-  border: 1px solid hsl(var(--border) / 0.5);
+  background: hsl(var(--card) / 0.7);
+  backdrop-filter: blur(16px) saturate(120%);
+  border: 1px solid hsl(var(--border) / 0.4);
 }
 
 /* Gradient backgrounds */
@@ -129,7 +138,7 @@ html {
 
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px -5px hsl(var(--foreground) / 0.1);
+  box-shadow: 0 12px 32px -8px hsl(var(--primary) / 0.15);
 }
 
 /* Text gradient */
@@ -140,10 +149,11 @@ html {
   background-clip: text;
 }
 
-/* Metric cards */
+/* Metric cards - bento style */
 .metric-card {
-  @apply relative overflow-hidden rounded-xl border border-border/50 bg-card p-4;
-  transition: all 0.2s ease;
+  @apply relative overflow-hidden rounded-xl border border-border/40 bg-card/80 p-4;
+  backdrop-filter: blur(8px);
+  transition: all 0.25s ease;
 }
 
 .metric-card::before {
@@ -152,26 +162,35 @@ html {
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, hsl(var(--primary)), transparent);
+  height: 2px;
+  background: linear-gradient(90deg, hsl(var(--primary) / 0.6), transparent);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.metric-card:hover::before {
+  opacity: 1;
 }
 
 .metric-card:hover {
-  border-color: hsl(var(--primary) / 0.5);
-  box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.3);
+  border-color: hsl(var(--primary) / 0.3);
+  background: hsl(var(--card) / 0.95);
+  box-shadow:
+    0 0 0 1px hsl(var(--primary) / 0.1),
+    0 8px 24px -4px hsl(var(--primary) / 0.1);
 }
 
 /* Profit/Loss indicators */
 .profit-badge {
   @apply inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium;
-  background: hsl(var(--profit) / 0.15);
-  color: hsl(var(--profit-foreground));
+  background: hsl(var(--profit) / 0.12);
+  color: hsl(142 76% 55%);
 }
 
 .loss-badge {
   @apply inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium;
-  background: hsl(var(--loss) / 0.15);
-  color: hsl(var(--loss-foreground));
+  background: hsl(var(--loss) / 0.12);
+  color: hsl(0 84% 70%);
 }
 
 /* Tab styling */
@@ -193,26 +212,27 @@ html {
 /* Code block styling */
 .code-block {
   @apply relative rounded-lg bg-secondary/50 p-4 font-mono text-sm overflow-auto;
-  border: 1px solid hsl(var(--border) / 0.5);
+  border: 1px solid hsl(var(--border) / 0.3);
+  background: hsl(222 47% 7% / 0.8);
 }
 
 .code-block::before {
-  content: 'Pine Script';
+  content: 'Pine Script v5';
   position: absolute;
   top: 0;
   right: 0;
   padding: 0.25rem 0.75rem;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: hsl(var(--muted-foreground));
+  color: hsl(var(--muted-foreground) / 0.6);
   border-bottom-left-radius: 0.5rem;
-  background: hsl(var(--muted));
+  background: hsl(var(--muted) / 0.8);
 }
 
 /* Focus styles */
 *:focus-visible {
-  outline: 2px solid hsl(var(--ring));
+  outline: 2px solid hsl(var(--ring) / 0.5);
   outline-offset: 2px;
 }
 
@@ -220,4 +240,20 @@ html {
 ::selection {
   background: hsl(var(--primary) / 0.3);
   color: hsl(var(--foreground));
+}
+
+/* Noise texture overlay for depth */
+.noise-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.015;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Improved table styling */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
 }
