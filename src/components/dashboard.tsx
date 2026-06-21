@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Card, CardContent } from './ui/card'
 import { LayoutGrid, Upload, BarChart3, GitCompare } from 'lucide-react'
@@ -10,11 +10,9 @@ import ResultsViewer from './results-viewer'
 import ComparisonView from './comparison-view'
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState('builder')
-
   return (
     <div className="container mx-auto px-4 py-6">
-      <Tabs defaultValue="builder" onValueChange={setActiveTab}>
+      <Tabs defaultValue="builder">
         <TabsList className="grid w-full grid-cols-4 mb-6">
           <TabsTrigger value="builder" className="flex items-center gap-2">
             <LayoutGrid className="w-4 h-4" />
