@@ -5,13 +5,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card'
 import { 
   LayoutGrid, Upload, BarChart3, GitCompare, 
-  Sparkles, TrendingUp, TrendingDown, Activity
+  Sparkles, TrendingUp, TrendingDown, Activity,
+  Brain, Wifi
 } from 'lucide-react'
 import StrategyBuilder from './strategy-builder'
+import AIStrategyBuilder from './ai-strategy-builder'
 import BacktestImporter from './backtest-importer'
 import ResultsViewer from './results-viewer'
 import ComparisonView from './comparison-view'
+import TradingViewConnector from './tradingview-connector'
 import { BacktestResult } from '@/types'
+import { loadDemoDataIfNeeded } from '@/lib/demo-data'
 
 export default function Dashboard() {
   const [backtests, setBacktests] = useState<BacktestResult[]>([])
@@ -20,9 +24,19 @@ export default function Dashboard() {
   useEffect(() => {
     // Load backtests from localStorage
     const stored = localStorage.getItem('trading_backtests')
+    let existingBacktests: BacktestResult[] = []
     if (stored) {
-      setBacktests(JSON.parse(stored))
+      existingBacktests = JSON.parse(stored)
     }
+
+    // Load demo data on first visit
+    const demoData = loadDemoDataIfNeeded()
+    if (demoData) {
+      existingBacktests = [...demoData, ...existingBacktests]
+      localStorage.setItem('trading_backtests', JSON.stringify(existingBacktests))
+    }
+
+    setBacktests(existingBacktests)
     setIsLoaded(true)
   }, [])
 
@@ -112,16 +126,26 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
-        <Tabs defaultValue="builder" className="w-full">
-          <TabsList className="inline-flex h-auto p-1 bg-muted/50 rounded-xl mb-6">
+        <Tabs defaultValue="ai-builder" className="w-full">
+          <TabsList className="inline-flex h-auto p-1 bg-muted/50 rounded-xl mb-6 flex-wrap">
+            <TabsTrigger value="ai-builder" className="flex items-center gap-2 px-4 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
+              <Brain className="w-4 h-4" />
+              <span className="hidden sm:inline">AI Builder</span>
+              <span className="sm:hidden">AI</span>
+            </TabsTrigger>
             <TabsTrigger value="builder" className="flex items-center gap-2 px-4 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
               <LayoutGrid className="w-4 h-4" />
-              <span className="hidden sm:inline">Strategy Builder</span>
+              <span className="hidden sm:inline">Manual Builder</span>
               <span className="sm:hidden">Builder</span>
+            </TabsTrigger>
+            <TabsTrigger value="connector" className="flex items-center gap-2 px-4 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
+              <Wifi className="w-4 h-4" />
+              <span className="hidden sm:inline">TradingView</span>
+              <span className="sm:hidden">TV</span>
             </TabsTrigger>
             <TabsTrigger value="import" className="flex items-center gap-2 px-4 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
               <Upload className="w-4 h-4" />
-              <span className="hidden sm:inline">Import Results</span>
+              <span className="hidden sm:inline">Import CSV</span>
               <span className="sm:hidden">Import</span>
             </TabsTrigger>
             <TabsTrigger value="results" className="flex items-center gap-2 px-4 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
@@ -136,13 +160,20 @@ export default function Dashboard() {
             <TabsTrigger value="compare" className="flex items-center gap-2 px-4 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
               <GitCompare className="w-4 h-4" />
               <span className="hidden sm:inline">Compare</span>
-              <span className="sm:hidden">Compare</span>
             </TabsTrigger>
           </TabsList>
 
           <div className="animate-fade-in">
+            <TabsContent value="ai-builder" className="mt-0">
+              <AIStrategyBuilder />
+            </TabsContent>
+
             <TabsContent value="builder" className="mt-0">
               <StrategyBuilder />
+            </TabsContent>
+
+            <TabsContent value="connector" className="mt-0">
+              <TradingViewConnector onBacktestImported={handleBacktestImported} />
             </TabsContent>
 
             <TabsContent value="import" className="mt-0">
