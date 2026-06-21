@@ -6,24 +6,28 @@ import { Input } from './ui/input'
 import { Select } from './ui/select'
 import { Textarea } from './ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card'
-import { Plus, Trash2, Copy, Download, Save } from 'lucide-react'
-import { Indicator, IndicatorType, Strategy } from '@/types'
-import { generatePineScript, createStrategyFromForm } from '@/lib/pine-generator'
+import { 
+  Plus, Trash2, Copy, Download, Save, Code2, 
+  Settings, TrendingUp, Target, Shield, Sparkles,
+  Check, ChevronDown
+} from 'lucide-react'
+import { Indicator, IndicatorType, Strategy, FUTURES_CONTRACTS } from '@/types'
+import { generatePineScript } from '@/lib/pine-generator'
 import { StrategyStorage } from '@/lib/storage'
 import { generateId } from '@/lib/utils'
 
-const INDICATOR_TYPES: { value: IndicatorType; label: string }[] = [
-  { value: 'sma', label: 'Simple Moving Average (SMA)' },
-  { value: 'ema', label: 'Exponential Moving Average (EMA)' },
-  { value: 'rsi', label: 'Relative Strength Index (RSI)' },
-  { value: 'macd', label: 'MACD' },
-  { value: 'bollinger', label: 'Bollinger Bands' },
-  { value: 'atr', label: 'Average True Range (ATR)' },
-  { value: 'stochastic', label: 'Stochastic' },
-  { value: 'adx', label: 'Average Directional Index (ADX)' },
-  { value: 'vwap', label: 'VWAP' },
-  { value: 'volume', label: 'Volume' },
-  { value: 'supertrend', label: 'SuperTrend' },
+const INDICATOR_TYPES: { value: IndicatorType; label: string; icon: string }[] = [
+  { value: 'sma', label: 'Simple Moving Average', icon: '📈' },
+  { value: 'ema', label: 'Exponential Moving Average', icon: '📊' },
+  { value: 'rsi', label: 'Relative Strength Index', icon: '🎯' },
+  { value: 'macd', label: 'MACD', icon: '〰️' },
+  { value: 'bollinger', label: 'Bollinger Bands', icon: '📏' },
+  { value: 'atr', label: 'Average True Range', icon: '📊' },
+  { value: 'stochastic', label: 'Stochastic', icon: '🎲' },
+  { value: 'adx', label: 'Average Directional Index', icon: '🧭' },
+  { value: 'vwap', label: 'VWAP', icon: '📉' },
+  { value: 'volume', label: 'Volume', icon: '📊' },
+  { value: 'supertrend', label: 'SuperTrend', icon: '📈' },
 ]
 
 const TIMEFRAMES = ['1m', '5m', '15m', '30m', '1h', '4h', '1D', '1W', '1M']
@@ -34,28 +38,47 @@ export default function StrategyBuilder() {
   const [timeframe, setTimeframe] = useState('5m')
   const [description, setDescription] = useState('')
   const [indicators, setIndicators] = useState<Indicator[]>([])
-  const [stopLoss, setStopLoss] = useState<number | undefined>(undefined)
-  const [takeProfit, setTakeProfit] = useState<number | undefined>(undefined)
-  const [riskPerTrade, setRiskPerTrade] = useState<number>(10)
+  const [stopLoss, setStopLoss] = useState<number>(2)
+  const [takeProfit, setTakeProfit] = useState<number>(5)
+  const [riskPerTrade, setRiskPerTrade] = useState<number>(1)
   const [pineScript, setPineScript] = useState('')
   const [savedMessage, setSavedMessage] = useState('')
+  const [copied, setCopied] = useState(false)
+  const [showIndicatorSelect, setShowIndicatorSelect] = useState(false)
 
-  const addIndicator = () => {
+  const addIndicator = (type: IndicatorType) => {
+    const defaultParams: Record<IndicatorType, Record<string, number>> = {
+      sma: { period: 20 },
+      ema: { period: 20 },
+      rsi: { period: 14 },
+      macd: { fast: 12, slow: 26, signal: 9 },
+      bollinger: { period: 20, stdDev: 2 },
+      atr: { period: 14 },
+      stochastic: { k: 14, d: 3 },
+      adx: { period: 14 },
+      vwap: {},
+      volume: {},
+      supertrend: { period: 10, multiplier: 3 },
+    }
+
     const newIndicator: Indicator = {
       id: generateId(),
-      type: 'sma',
-      parameters: { period: 20 },
+      type,
+      parameters: defaultParams[type],
     }
     setIndicators([...indicators, newIndicator])
+    setShowIndicatorSelect(false)
   }
 
   const removeIndicator = (id: string) => {
     setIndicators(indicators.filter(i => i.id !== id))
   }
 
-  const updateIndicator = (id: string, updates: Partial<Indicator>) => {
+  const updateIndicatorParam = (id: string, param: string, value: number) => {
     setIndicators(indicators.map(i => 
-      i.id === id ? { ...i, ...updates } : i
+      i.id === id 
+        ? { ...i, parameters: { ...i.parameters, [param]: value } }
+        : i
     ))
   }
 
@@ -77,24 +100,10 @@ export default function StrategyBuilder() {
     setPineScript(script)
   }
 
-  const handleSaveStrategy = () => {
-    const strategy = createStrategyFromForm(
-      name,
-      symbol,
-      timeframe,
-      indicators,
-      stopLoss,
-      takeProfit,
-      riskPerTrade,
-      description
-    )
-    StrategyStorage.save(strategy)
-    setSavedMessage('Strategy saved successfully!')
-    setTimeout(() => setSavedMessage(''), 3000)
-  }
-
-  const handleCopyScript = () => {
-    navigator.clipboard.writeText(pineScript)
+  const handleCopyScript = async () => {
+    await navigator.clipboard.writeText(pineScript)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   const handleDownloadScript = () => {
@@ -103,325 +112,341 @@ export default function StrategyBuilder() {
     const a = document.createElement('a')
     a.href = url
     a.download = `${name.toLowerCase().replace(/\s+/g, '-')}.pine`
-    document.body.appendChild(a)
     a.click()
-    document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
 
+  const handleSaveStrategy = () => {
+    const strategy: Strategy = {
+      id: generateId(),
+      name,
+      symbol,
+      timeframe,
+      description,
+      indicators,
+      stopLoss,
+      takeProfit,
+      riskPerTrade,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    StrategyStorage.save(strategy)
+    setSavedMessage('Strategy saved!')
+    setTimeout(() => setSavedMessage(''), 2000)
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Strategy Configuration */}
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium mb-2 block">Strategy Name</label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="My Strategy"
-            />
-          </div>
+    <div className="grid lg:grid-cols-2 gap-6">
+      {/* Configuration Panel */}
+      <div className="space-y-6">
+        {/* Basic Configuration */}
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm hover-lift">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Settings className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Strategy Configuration</CardTitle>
+                <CardDescription>Set up your trading strategy parameters</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Strategy Name</label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="My Strategy"
+                  className="bg-background/50"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Symbol</label>
+                <Select 
+                  value={symbol} 
+                  onChange={(e) => setSymbol(e.target.value)}
+                  className="bg-background/50"
+                >
+                  {FUTURES_CONTRACTS.map(c => (
+                    <option key={c.symbol} value={c.symbol}>
+                      {c.symbol} - {c.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Symbol</label>
-              <Input
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value)}
-                placeholder="MNQ"
-              />
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Timeframe</label>
+                <Select 
+                  value={timeframe} 
+                  onChange={(e) => setTimeframe(e.target.value)}
+                  className="bg-background/50"
+                >
+                  {TIMEFRAMES.map(tf => (
+                    <option key={tf} value={tf}>{tf}</option>
+                  ))}
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Risk per Trade (%)</label>
+                <Input
+                  type="number"
+                  value={riskPerTrade}
+                  onChange={(e) => setRiskPerTrade(parseFloat(e.target.value) || 1)}
+                  min={0.1}
+                  max={100}
+                  step={0.1}
+                  className="bg-background/50"
+                />
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Timeframe</label>
-              <Select value={timeframe} onChange={(e) => setTimeframe(e.target.value)}>
-                {TIMEFRAMES.map(tf => (
-                  <option key={tf} value={tf}>{tf}</option>
-                ))}
-              </Select>
-            </div>
-          </div>
 
-          <div>
-            <label className="text-sm font-medium mb-2 block">Description</label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe your strategy..."
-              rows={3}
-            />
-          </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Description</label>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe your strategy logic..."
+                rows={2}
+                className="bg-background/50 resize-none"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Stop Loss %</label>
-              <Input
-                type="number"
-                value={stopLoss || ''}
-                onChange={(e) => setStopLoss(parseFloat(e.target.value) || undefined)}
-                placeholder="1.5"
-              />
+        {/* Risk Management */}
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm hover-lift">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-green-500/10">
+                <Shield className="w-4 h-4 text-green-500" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Risk Management</CardTitle>
+                <CardDescription>Stop loss and take profit settings</CardDescription>
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Take Profit %</label>
-              <Input
-                type="number"
-                value={takeProfit || ''}
-                onChange={(e) => setTakeProfit(parseFloat(e.target.value) || undefined)}
-                placeholder="3.0"
-              />
+          </CardHeader>
+          <CardContent>
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-red-500" />
+                  Stop Loss (%)
+                </label>
+                <Input
+                  type="number"
+                  value={stopLoss}
+                  onChange={(e) => setStopLoss(parseFloat(e.target.value) || 0)}
+                  min={0}
+                  step={0.1}
+                  className="bg-background/50"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  Take Profit (%)
+                </label>
+                <Input
+                  type="number"
+                  value={takeProfit}
+                  onChange={(e) => setTakeProfit(parseFloat(e.target.value) || 0)}
+                  min={0}
+                  step={0.1}
+                  className="bg-background/50"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Risk/Reward</label>
+                <div className="flex items-center h-10 px-3 rounded-md border border-border bg-muted/30">
+                  <span className="text-sm font-medium">
+                    {stopLoss > 0 ? (takeProfit / stopLoss).toFixed(2) : '-'}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Risk/Trade %</label>
-              <Input
-                type="number"
-                value={riskPerTrade}
-                onChange={(e) => setRiskPerTrade(parseFloat(e.target.value) || 10)}
-                placeholder="10"
-              />
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Indicators */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">Indicators</label>
-            <Button variant="outline" size="sm" onClick={addIndicator}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Indicator
-            </Button>
-          </div>
-
-          <div className="space-y-3 max-h-[300px] overflow-y-auto">
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-blue-500/10">
+                  <TrendingUp className="w-4 h-4 text-blue-500" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Indicators</CardTitle>
+                  <CardDescription>Add technical indicators to your strategy</CardDescription>
+                </div>
+              </div>
+              
+              <div className="relative">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowIndicatorSelect(!showIndicatorSelect)}
+                  className="gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+                
+                {showIndicatorSelect && (
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-card border border-border rounded-lg shadow-xl z-50 max-h-80 overflow-auto">
+                    {INDICATOR_TYPES.map(ind => (
+                      <button
+                        key={ind.value}
+                        onClick={() => addIndicator(ind.value)}
+                        className="w-full px-3 py-2 text-left hover:bg-muted/50 flex items-center gap-2 text-sm"
+                      >
+                        <span>{ind.icon}</span>
+                        <span>{ind.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
             {indicators.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No indicators added. Click "Add Indicator" to configure your strategy.
-              </p>
+              <div className="text-center py-8 text-muted-foreground">
+                <TrendingUp className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No indicators added yet</p>
+                <p className="text-xs mt-1">Click "Add" to add technical indicators</p>
+              </div>
             ) : (
-              indicators.map((indicator) => (
-                <Card key={indicator.id}>
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Select
-                        value={indicator.type}
-                        onChange={(e) => updateIndicator(indicator.id, { type: e.target.value as IndicatorType })}
-                        className="flex-1"
-                      >
-                        {INDICATOR_TYPES.map(({ value, label }) => (
-                          <option key={value} value={value}>{label}</option>
+              <div className="space-y-3">
+                {indicators.map((ind, index) => (
+                  <div 
+                    key={ind.id} 
+                    className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-background/30 animate-fade-in"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">
+                        {INDICATOR_TYPES.find(t => t.value === ind.type)?.icon}
+                      </span>
+                      <span className="font-medium text-sm uppercase">{ind.type}</span>
+                      <div className="flex gap-2">
+                        {Object.entries(ind.parameters).map(([key, value]) => (
+                          <div key={key} className="flex items-center gap-1">
+                            <span className="text-xs text-muted-foreground">{key}:</span>
+                            <Input
+                              type="number"
+                              value={value as number}
+                              onChange={(e) => updateIndicatorParam(ind.id, key, parseFloat(e.target.value) || 0)}
+                              className="w-14 h-7 text-xs bg-background/50"
+                            />
+                          </div>
                         ))}
-                      </Select>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeIndicator(indicator.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      </div>
                     </div>
-                    <IndicatorParams
-                      type={indicator.type}
-                      params={indicator.parameters}
-                      onChange={(params) => updateIndicator(indicator.id, { parameters: params })}
-                    />
-                  </CardContent>
-                </Card>
-              ))
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeIndicator(ind.id)}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
             )}
-          </div>
-        </div>
-      </div>
+          </CardContent>
+        </Card>
 
-      {/* Actions */}
-      <div className="flex items-center gap-4">
-        <Button onClick={handleGenerateScript}>
-          Generate Pine Script
-        </Button>
-        <Button variant="outline" onClick={handleSaveStrategy}>
-          <Save className="w-4 h-4 mr-2" />
-          Save Strategy
-        </Button>
+        {/* Action Buttons */}
+        <div className="flex gap-3">
+          <Button 
+            onClick={handleGenerateScript}
+            className="flex-1 gradient-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow"
+            size="lg"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Generate Pine Script
+          </Button>
+          <Button 
+            onClick={handleSaveStrategy}
+            variant="outline"
+            size="lg"
+            className="border-primary/30 hover:bg-primary/5"
+          >
+            <Save className="w-4 h-4" />
+          </Button>
+        </div>
+        
         {savedMessage && (
-          <span className="text-sm text-profit">{savedMessage}</span>
+          <div className="text-sm text-green-500 text-center animate-fade-in">
+            ✓ {savedMessage}
+          </div>
         )}
       </div>
 
-      {/* Generated Script */}
-      {pineScript && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Generated Pine Script</CardTitle>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleCopyScript}>
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleDownloadScript}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
-                </Button>
+      {/* Pine Script Output */}
+      <Card className={`border-border/50 bg-card/50 backdrop-blur-sm ${pineScript ? 'hover-lift' : 'opacity-60'}`}>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-purple-500/10">
+                <Code2 className="w-4 h-4 text-purple-500" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Generated Pine Script</CardTitle>
+                <CardDescription>Copy to TradingView Pine Editor</CardDescription>
               </div>
             </div>
-            <CardDescription>
-              Copy this script and paste it into TradingView Pine Editor
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto whitespace-pre-wrap">
+            {pineScript && (
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleCopyScript}
+                  className="gap-2"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-4 h-4 text-green-500" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      Copy
+                    </>
+                  )}
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleDownloadScript}>
+                  <Download className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {pineScript ? (
+            <pre className="code-block text-xs leading-relaxed max-h-[600px] overflow-auto">
               {pineScript}
             </pre>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <div className="text-center py-16 text-muted-foreground">
+              <Code2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">Configure your strategy</p>
+              <p className="text-xs mt-1">Then click "Generate Pine Script"</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
-}
-
-// Component for indicator-specific parameters
-function IndicatorParams({
-  type,
-  params,
-  onChange,
-}: {
-  type: IndicatorType
-  params: Record<string, number | string | boolean>
-  onChange: (params: Record<string, number | string | boolean>) => void
-}) {
-  const handleParamChange = (key: string, value: number | string | boolean) => {
-    onChange({ ...params, [key]: value })
-  }
-
-  switch (type) {
-    case 'sma':
-    case 'ema':
-    case 'rsi':
-    case 'atr':
-      return (
-        <div>
-          <label className="text-xs text-muted-foreground">Period</label>
-          <Input
-            type="number"
-            value={(params.period as number) || 20}
-            onChange={(e) => handleParamChange('period', parseInt(e.target.value))}
-            className="h-8"
-          />
-        </div>
-      )
-    case 'macd':
-      return (
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <label className="text-xs text-muted-foreground">Fast</label>
-            <Input
-              type="number"
-              value={(params.fastPeriod as number) || 12}
-              onChange={(e) => handleParamChange('fastPeriod', parseInt(e.target.value))}
-              className="h-8"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Slow</label>
-            <Input
-              type="number"
-              value={(params.slowPeriod as number) || 26}
-              onChange={(e) => handleParamChange('slowPeriod', parseInt(e.target.value))}
-              className="h-8"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Signal</label>
-            <Input
-              type="number"
-              value={(params.signalPeriod as number) || 9}
-              onChange={(e) => handleParamChange('signalPeriod', parseInt(e.target.value))}
-              className="h-8"
-            />
-          </div>
-        </div>
-      )
-    case 'bollinger':
-      return (
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-xs text-muted-foreground">Period</label>
-            <Input
-              type="number"
-              value={(params.period as number) || 20}
-              onChange={(e) => handleParamChange('period', parseInt(e.target.value))}
-              className="h-8"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Std Dev</label>
-            <Input
-              type="number"
-              step="0.5"
-              value={(params.stdDev as number) || 2}
-              onChange={(e) => handleParamChange('stdDev', parseFloat(e.target.value))}
-              className="h-8"
-            />
-          </div>
-        </div>
-      )
-    case 'stochastic':
-      return (
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <label className="text-xs text-muted-foreground">K Period</label>
-            <Input
-              type="number"
-              value={(params.kPeriod as number) || 14}
-              onChange={(e) => handleParamChange('kPeriod', parseInt(e.target.value))}
-              className="h-8"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">D Period</label>
-            <Input
-              type="number"
-              value={(params.dPeriod as number) || 3}
-              onChange={(e) => handleParamChange('dPeriod', parseInt(e.target.value))}
-              className="h-8"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Overbought</label>
-            <Input
-              type="number"
-              value={(params.overbought as number) || 80}
-              onChange={(e) => handleParamChange('overbought', parseInt(e.target.value))}
-              className="h-8"
-            />
-          </div>
-        </div>
-      )
-    case 'supertrend':
-      return (
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-xs text-muted-foreground">Factor</label>
-            <Input
-              type="number"
-              step="0.5"
-              value={(params.factor as number) || 3}
-              onChange={(e) => handleParamChange('factor', parseFloat(e.target.value))}
-              className="h-8"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">ATR Period</label>
-            <Input
-              type="number"
-              value={(params.atrPeriod as number) || 10}
-              onChange={(e) => handleParamChange('atrPeriod', parseInt(e.target.value))}
-              className="h-8"
-            />
-          </div>
-        </div>
-      )
-    default:
-      return null
-  }
 }
