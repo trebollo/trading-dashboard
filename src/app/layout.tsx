@@ -23,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark">
       <body className={`${inter.variable} font-sans antialiased`}>
-        <div className="relative min-h-screen bg-background">
+        <div className="relative h-screen flex flex-col bg-background overflow-hidden">
           {/* Background decoration */}
           <div className="fixed inset-0 -z-10 overflow-hidden">
             <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
@@ -31,7 +31,9 @@ export default function RootLayout({
           </div>
           
           <Header />
-          {children}
+          <div className="flex-1 overflow-hidden">
+            {children}
+          </div>
         </div>
       </body>
     </html>
