@@ -1,33 +1,24 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Trash2, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, TrendingUp, TrendingDown } from 'lucide-react'
 import { BacktestResult } from '@/types'
-import { BacktestStorage } from '@/lib/storage'
 import { analyzeStrategy } from '@/lib/strategy-analyzer'
 import { formatCurrency, formatPercent, formatNumber } from '@/lib/utils'
 
-export default function ResultsViewer() {
-  const [backtests, setBacktests] = useState<BacktestResult[]>([])
+interface ResultsViewerProps {
+  backtests: BacktestResult[]
+  onDelete: (id: string) => void
+}
+
+export default function ResultsViewer({ backtests, onDelete }: ResultsViewerProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
-
-  useEffect(() => {
-    loadBacktests()
-  }, [])
-
-  const loadBacktests = () => {
-    const stored = BacktestStorage.getAll()
-    setBacktests(stored.sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    ))
-  }
 
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this backtest?')) {
-      BacktestStorage.delete(id)
-      loadBacktests()
+      onDelete(id)
     }
   }
 

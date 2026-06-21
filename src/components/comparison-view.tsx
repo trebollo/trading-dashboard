@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import { Select } from './ui/select'
 import { BacktestResult } from '@/types'
-import { BacktestStorage } from '@/lib/storage'
 import { formatCurrency, formatPercent } from '@/lib/utils'
+
+interface ComparisonViewProps {
+  backtests: BacktestResult[]
+}
 
 interface ComparisonMetric {
   key: string
@@ -32,23 +34,17 @@ const COMPARISON_METRICS: ComparisonMetric[] = [
   { key: 'maxConsecutiveLosses', label: 'Max Consec. Losses', format: 'number', higherIsBetter: false },
 ]
 
-export default function ComparisonView() {
-  const [availableBacktests, setAvailableBacktests] = useState<BacktestResult[]>([])
+export default function ComparisonView({ backtests }: ComparisonViewProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [selectedBacktests, setSelectedBacktests] = useState<BacktestResult[]>([])
 
   useEffect(() => {
-    const stored = BacktestStorage.getAll()
-    setAvailableBacktests(stored)
-  }, [])
-
-  useEffect(() => {
     setSelectedBacktests(
       selectedIds
-        .map(id => availableBacktests.find(b => b.id === id))
+        .map(id => backtests.find(b => b.id === id))
         .filter((b): b is BacktestResult => b !== undefined)
     )
-  }, [selectedIds, availableBacktests])
+  }, [selectedIds, backtests])
 
   const toggleSelection = (id: string) => {
     if (selectedIds.includes(id)) {
@@ -77,7 +73,7 @@ export default function ComparisonView() {
     return metric.higherIsBetter ? Math.max(...values) : Math.min(...values)
   }
 
-  if (availableBacktests.length === 0) {
+  if (backtests.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground">
@@ -93,7 +89,7 @@ export default function ComparisonView() {
       <div>
         <h3 className="text-sm font-medium mb-3">Select Strategies to Compare (up to 5)</h3>
         <div className="flex flex-wrap gap-2">
-          {availableBacktests.map((backtest) => (
+          {backtests.map((backtest) => (
             <button
               key={backtest.id}
               onClick={() => toggleSelection(backtest.id)}
